@@ -14,6 +14,8 @@ You'll need to install the following pre-requisites in order to build SAFE appli
 
 ## Deploying the application
 
+You will need to add your Azure Subscription Id plus your admin email and telephone to the top of `Build.fs` (these are used to send the alert email / sms).
+
 There are `Bundle` and `Azure` targets that you can use to package your app and deploy to Azure, respectively:
 
 ```bash
