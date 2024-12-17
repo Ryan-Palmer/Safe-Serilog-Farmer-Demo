@@ -1,0 +1,18 @@
+source https://api.nuget.org/v3/index.json
+framework: net8.0
+storage: none
+
+nuget Azure.Identity
+nuget Azure.Monitor.OpenTelemetry.AspNetCore
+nuget Expecto ~> 9
+nuget SAFE.Server ~> 5
+nuget SAFE.Client ~> 5
+
+nuget Fake.Core.Target ~> 5
+nuget Fake.IO.FileSystem ~> 5
+nuget Farmer ~> 1
+nuget Serilog
+nuget Serilog.Sinks.AzureLogAnalytics
+nuget Serilog.Sinks.Console
+nuget Serilog.AspNetCore
+nuget Serilog.Formatting.Compact

@@ -1,0 +1,8 @@
+SAFE.Server
+Azure.Monitor.OpenTelemetry.AspNetCore
+Azure.Identity
+Serilog
+Serilog.AspNetCore
+Serilog.Sinks.AzureLogAnalytics
+Serilog.Sinks.Console
+Serilog.Formatting.Compact
