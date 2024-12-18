@@ -2,13 +2,8 @@ open Fake.Core
 open Fake.IO
 open Farmer
 open Farmer.Builders
-open Farmer.DiagnosticSettings
-open Farmer.Insights
-open Farmer.Arm.InsightsAlerts
-open Farmer.Storage
 open Helpers
 open Farmer.Arm
-open System
 
 initializeContext ()
 
@@ -20,7 +15,6 @@ let sharedTestsPath = Path.getFullName "tests/Shared"
 let serverTestsPath = Path.getFullName "tests/Server"
 let clientTestsPath = Path.getFullName "tests/Client"
 
-let subId = "YOUR-AZ-SUBSCRIPTION-ID"
 let resGroupName = "Logging-Test"
 let adminEmail = "YOUR-ADMIN-EMAIL"
 let adminCountryCode = "44" // If in UK
@@ -112,7 +106,7 @@ let serilogDcr // Hard coded Serilog columns
     logWorkspaceName
     streamName
     dceName
-    dceEndpointId =
+    dceResourceId =
     $"""{{
         "type": "microsoft.insights/datacollectionrules",
         "apiVersion": "2023-03-11",
@@ -124,7 +118,7 @@ let serilogDcr // Hard coded Serilog columns
         "location": "{location}",
         "tags": {{}},
         "properties": {{
-            "dataCollectionEndpointId": "{dceEndpointId}",
+            "dataCollectionEndpointId": "{dceResourceId}",
             "streamDeclarations": {{
                 "{streamName}": {{
                     "columns": [
@@ -242,7 +236,7 @@ Target.create "Azure" (fun _ ->
     }
 
     let deployLocation = Location.UKSouth
-    let workspaceResourceId = $"/subscriptions/{subId}/resourceGroups/{resGroupName}/providers/Microsoft.OperationalInsights/workspaces/{loggingName}"
+    let workspaceResourceId = (logging :> IBuilder).ResourceId.Eval()
 
     let logDataAlert = // See https://learn.microsoft.com/en-us/azure/azure-monitor/logs/daily-cap#alert-when-daily-cap-is-reached
         scheduledQueryRule
@@ -275,18 +269,21 @@ Target.create "Azure" (fun _ ->
 
     let dceName = "SerilogDCE"
     let dce = dce dceName deployLocation.ArmValue
-    let dceEndpoint = $"/subscriptions/{subId}/resourceGroups/{resGroupName}/providers/Microsoft.Insights/dataCollectionEndpoints/{dceName}"
+    let dceResourceId = $"resourceId('Microsoft.Insights/dataCollectionEndpoints', '{dceName}')"
+
+    let dcrName = "SerilogDCR"
+    let dcrResourceId = $"resourceId('Microsoft.Insights/datacollectionrules', '{dcrName}')"
 
     let dcr =
         serilogDcr
             serilogAnalyticsTableName
-            "SerilogDCR"
+            dcrName
             deployLocation.ArmValue
             workspaceResourceId
             loggingName
             serilogStreamName
             dceName
-            dceEndpoint
+            $"[{dceResourceId}]"
 
     let insights =
         appInsights {
@@ -303,8 +300,8 @@ Target.create "Azure" (fun _ ->
         run_from_package
         link_to_app_insights insights
         setting "APPLICATIONINSIGHTS_CONNECTION_STRING" insights.ConnectionString
-        setting "Serilog_DCR_ImmutableId" "[reference(resourceId('microsoft.insights/datacollectionrules', 'SerilogDCR'), '2023-03-11').ImmutableId]"
-        setting "Serilog_DCE_Endpoint" "[reference(resourceId('Microsoft.Insights/dataCollectionEndpoints', 'SerilogDCE'), '2023-03-11').LogsIngestion.Endpoint]"
+        setting "Serilog_DCR_ImmutableId" $"[reference({dcrResourceId}, '2023-03-11').ImmutableId]"
+        setting "Serilog_DCE_Endpoint" $"[reference({dceResourceId}, '2023-03-11').LogsIngestion.Endpoint]"
         setting "Serilog_StreamName" serilogStreamName
     }
 
